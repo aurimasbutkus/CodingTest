@@ -7,7 +7,7 @@
         Category root:
         <select name="parent_id">
             <option value="0">root</option>
-            @foreach($allCategories as $category)
+            @foreach($categoriesByParent as $category)
                 <option value="{{ $category->id }}">{{ $category->name }}</option>
             @endforeach
         </select>

@@ -9,14 +9,10 @@ class CategoryController extends Controller
 {
     public function index()
     {
-    	$allCategories = \App\Category::all();
+    	$categoriesByParent = \App\Category::orderBy('parent_id')->get();
     	$rootCategories = \App\Category::root()->get();
-    	$string = "";
-    	foreach($rootCategories as $category)
-    	{
-    		$string = $this->print($category, $string, 0);
-    	}
-    	return view('main', compact("allCategories", "rootCategories", "string"));
+    	$string = $this->print($categoriesByParent);
+    	return view('main', compact("categoriesByParent", "string"));
     }
 
     public function create(Request $request)
@@ -29,13 +25,51 @@ class CategoryController extends Controller
     	return $this->index();
     }
 
-    public function print(Category $category, String $string, $tier)
+    public function buildTierStack($categoryStack)
     {
-    	$string = $string . str_repeat('&nbsp', $tier) . $category->name . '<br/>';
-    	$tier++;
-    	foreach($category->subCategories as $subCategory)
+    	$tierStack;
+    	for($i = 0; $i < count($categoryStack); $i++)
     	{
-    		$string = $this->print($subCategory, $string, $tier);
+    		$category = $categoryStack[$i];
+    		if($category->parent_id == 0)
+    		{
+    			$tierStack[$category->id] = 0;
+    		}
+    		else
+    		{
+    			$tierStack[$category->id] = $tierStack[$category->parent_id] + 1;
+    		}
+    		array_slice($categoryStack, $i, 1);
+    	}
+    	return $tierStack;
+    }
+
+    public function sort($categoryStack)
+    {
+    	for ($i = 0; $i < count($categoryStack); $i++) {
+    		for ($j = $i + 1; $j < count($categoryStack); $j++) {
+    			if($categoryStack[$i]->id == $categoryStack[$j]->parent_id && $i + 1 != $j)
+    			{
+    				$category = $categoryStack[$j];
+    				array_splice($categoryStack, $j, 1);
+    				array_splice($categoryStack, $i + 1, 0, [$i => $category]);
+    			}
+    		}
+    	}
+    	return $categoryStack		;
+    }
+
+    public function print($categoriesByParent)
+    {
+    	$string = "";
+    	$categoriesByParent = $categoriesByParent->all();
+
+    	$tierStack = $this->buildTierStack($categoriesByParent);
+    	$categoriesByParent = $this->sort($categoriesByParent);
+    	
+    	foreach($categoriesByParent as $category)
+    	{
+    		$string = $string . str_repeat('&nbsp', $tierStack[$category->id]) . $category->name . '<br/>';
     	}
     	return $string;
     }
