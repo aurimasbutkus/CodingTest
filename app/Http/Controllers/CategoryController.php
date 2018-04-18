@@ -10,7 +10,6 @@ class CategoryController extends Controller
     public function index()
     {
     	$categoriesByParent = \App\Category::orderBy('parent_id')->get();
-    	$rootCategories = \App\Category::root()->get();
     	$string = $this->print($categoriesByParent);
     	return view('main', compact("categoriesByParent", "string"));
     }
@@ -48,7 +47,8 @@ class CategoryController extends Controller
     {
     	for ($i = 0; $i < count($categoryStack); $i++) {
     		for ($j = $i + 1; $j < count($categoryStack); $j++) {
-    			if($categoryStack[$i]->id == $categoryStack[$j]->parent_id && $i + 1 != $j)
+    			if($categoryStack[$i]->id == $categoryStack[$j]->parent_id
+    				&& $i + 1 != $j)
     			{
     				$category = $categoryStack[$j];
     				array_splice($categoryStack, $j, 1);
@@ -56,7 +56,7 @@ class CategoryController extends Controller
     			}
     		}
     	}
-    	return $categoryStack		;
+    	return $categoryStack;
     }
 
     public function print($categoriesByParent)
@@ -66,10 +66,13 @@ class CategoryController extends Controller
 
     	$tierStack = $this->buildTierStack($categoriesByParent);
     	$categoriesByParent = $this->sort($categoriesByParent);
-    	
+
     	foreach($categoriesByParent as $category)
     	{
-    		$string = $string . str_repeat('&nbsp', $tierStack[$category->id]) . $category->name . '<br/>';
+    		$string = $string .
+    					str_repeat('&nbsp', $tierStack[$category->id]) .
+    					$category->name .
+    					'<br/>';
     	}
     	return $string;
     }
